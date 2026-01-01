@@ -98,7 +98,7 @@ export const Header = () => {
         <div className="header__actions">
           <ThemeToggle />
           <a 
-            href="https://t.me/neffixlab"
+            href="https://t.me/scrackdev"
             className="header__cta"
             target="_blank"
             rel="noopener noreferrer"
@@ -110,3 +110,4 @@ export const Header = () => {
     </header>
   )
 }
+
