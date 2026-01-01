@@ -16,7 +16,7 @@ export const Footer = () => {
             <a href="https://t.me/neffixlab" target="_blank" rel="noopener noreferrer">
               Telegram
             </a>
-            <a href="https://kwork.ru/user/neffixlab" target="_blank" rel="noopener noreferrer">
+            <a href="https://kwork.ru/user/scrackdev" target="_blank" rel="noopener noreferrer">
               Kwork
             </a>
             <a href="https://t.me/neffixlab_reviews" target="_blank" rel="noopener noreferrer">
@@ -32,3 +32,4 @@ export const Footer = () => {
     </footer>
   )
 }
+
