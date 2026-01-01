@@ -81,7 +81,7 @@ export const Hero = () => {
           <Button href="https://t.me/neffixlab" variant="primary">
             Написать в Telegram
           </Button>
-          <Button href="https://kwork.ru/user/neffixlab" variant="secondary">
+          <Button href="https://kwork.ru/user/scrackdev" variant="secondary">
             Заказать на Kwork
           </Button>
         </div>
@@ -89,3 +89,4 @@ export const Hero = () => {
     </section>
   )
 }
+
