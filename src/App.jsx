@@ -7,15 +7,6 @@ import { Admin } from './pages/Admin'
 import { ProjectDetail } from './pages/ProjectDetail'
 import './styles/globals.css'
 
-* {
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-  tap-highlight-color: rgba(0,0,0,0);
-}
-
-*:focus {
-  outline: none !important;
-}
-
 function App() {
   return (
     <BrowserRouter>
