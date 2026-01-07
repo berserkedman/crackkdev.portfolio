@@ -6,65 +6,31 @@ const DEFAULT_PASSWORD = 'admin2026'
 export const Admin = () => {
   const [password, setPassword] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [content, setContent] = useState({
-    hero: {
-      title: 'Тимур, 23 года',
-      subtitle: 'Python-разработчик',
-      tagline: 'Автоматизация & Telegram-боты',
-      description: 'Создаю функциональные решения для бизнеса: от простых ботов для приёма заказов до сложных систем с интеграцией CRM, базами данных и внешними API.'
-    },
-    projects: [
-      {
-        id: 1,
-        slug: 'crm-bot',
-        category: 'TELEGRAM-БОТЫ',
-        title: 'CRM-бот для приёма заказов',
-        description: 'Автоматизация приёма и обработки заказов через Telegram с интеграцией 1С',
-        fullDescription: 'Полноценная CRM-система на базе Telegram-бота. Автоматический приём заказов, интеграция с 1С, уведомления менеджерам, статистика продаж.',
-        tech: ['Python', 'Aiogram', 'PostgreSQL', '1C'],
-        images: [],
-        link: ''
-      },
-      {
-        id: 2,
-        slug: 'parser',
-        category: 'ПАРСИНГ',
-        title: 'Парсер маркетплейсов',
-        description: 'Автоматический сбор и анализ данных с Wildberries, Ozon, Яндекс.Маркет',
-        fullDescription: 'Система автоматического парсинга товаров, цен и остатков с популярных маркетплейсов. Выгрузка в Excel, аналитика, мониторинг конкурентов.',
-        tech: ['Python', 'Selenium', 'BeautifulSoup', 'Excel'],
-        images: [],
-        link: ''
-      },
-      {
-        id: 3,
-        slug: 'mailing-bot',
-        category: 'TELEGRAM-БОТЫ',
-        title: 'Система автоматических рассылок',
-        description: 'Telegram-бот для массовых рассылок с таргетингом и аналитикой',
-        fullDescription: 'Умная система рассылок в Telegram. Сегментация аудитории, таргетинг по интересам, A/B тестирование, детальная аналитика открытий и конверсий.',
-        tech: ['Python', 'Aiogram', 'PostgreSQL', 'Analytics'],
-        images: [],
-        link: ''
-      }
-    ]
-  })
+  const [content, setContent] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
+  // Загрузка данных
   useEffect(() => {
     const auth = sessionStorage.getItem('adminAuth')
     if (auth === 'true') {
       setIsAuthenticated(true)
     }
-
-    const saved = localStorage.getItem('siteContent')
-    if (saved) {
-      try {
-        setContent(JSON.parse(saved))
-      } catch (e) {
-        console.error('Error loading content:', e)
-      }
-    }
+    loadContent()
   }, [])
+
+  const loadContent = async () => {
+    try {
+      const res = await fetch('/data/projects.json')
+      const data = await res.json()
+      setContent(data)
+    } catch (error) {
+      console.error('Ошибка загрузки:', error)
+      alert('❌ Не удалось загрузить данные')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -72,7 +38,7 @@ export const Admin = () => {
       setIsAuthenticated(true)
       sessionStorage.setItem('adminAuth', 'true')
     } else {
-      alert('Неверный пароль')
+      alert('❌ Неверный пароль')
     }
   }
 
@@ -82,9 +48,31 @@ export const Admin = () => {
     setPassword('')
   }
 
-  const handleSave = () => {
-    localStorage.setItem('siteContent', JSON.stringify(content))
-    alert('✅ Изменения сохранены')
+  const handleSave = async () => {
+    if (!password) {
+      alert('❌ Введите пароль для сохранения')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, content })
+      })
+
+      if (!res.ok) {
+        throw new Error('Ошибка сохранения')
+      }
+
+      alert('✅ Изменения сохранены! Vercel автоматически обновит сайт через 1-2 минуты.')
+    } catch (error) {
+      console.error('Ошибка:', error)
+      alert('❌ Не удалось сохранить изменения')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const updateHero = (field, value) => {
@@ -103,6 +91,37 @@ export const Admin = () => {
     }))
   }
 
+  const updateTech = (projectIndex, techIndex, value) => {
+    setContent(prev => ({
+      ...prev,
+      projects: prev.projects.map((p, i) => 
+        i === projectIndex 
+          ? { ...p, tech: p.tech.map((t, ti) => ti === techIndex ? value : t) }
+          : p
+      )
+    }))
+  }
+
+  const addTech = (projectIndex) => {
+    setContent(prev => ({
+      ...prev,
+      projects: prev.projects.map((p, i) => 
+        i === projectIndex ? { ...p, tech: [...p.tech, 'Новая технология'] } : p
+      )
+    }))
+  }
+
+  const removeTech = (projectIndex, techIndex) => {
+    setContent(prev => ({
+      ...prev,
+      projects: prev.projects.map((p, i) => 
+        i === projectIndex 
+          ? { ...p, tech: p.tech.filter((_, ti) => ti !== techIndex) }
+          : p
+      )
+    }))
+  }
+
   const addProject = () => {
     const newId = Math.max(...content.projects.map(p => p.id), 0) + 1
     setContent(prev => ({
@@ -110,9 +129,9 @@ export const Admin = () => {
       projects: [...prev.projects, {
         id: newId,
         slug: `project-${newId}`,
-        category: 'НОВЫЙ',
+        category: 'НОВАЯ КАТЕГОРИЯ',
         title: 'Новый проект',
-        description: 'Описание проекта',
+        description: 'Краткое описание',
         fullDescription: 'Полное описание проекта',
         tech: ['Python'],
         images: [],
@@ -122,7 +141,7 @@ export const Admin = () => {
   }
 
   const deleteProject = (index) => {
-    if (confirm('Удалить проект?')) {
+    if (confirm('❌ Точно удалить проект?')) {
       setContent(prev => ({
         ...prev,
         projects: prev.projects.filter((_, i) => i !== index)
@@ -130,15 +149,18 @@ export const Admin = () => {
     }
   }
 
+  // Экран входа
   if (!isAuthenticated) {
     return (
       <div className="admin-login">
-        <form onSubmit={handleLogin} className="admin-login__form">
-          <h1>Админ-панель</h1>
-          <p className="admin-login__description">Вход для редактирования контента</p>
+        <form className="admin-login__form" onSubmit={handleLogin}>
+          <h1>🔐 Админ-панель</h1>
+          <p className="admin-login__description">
+            Введите пароль для доступа
+          </p>
           <input
             type="password"
-            placeholder="Введите пароль"
+            placeholder="Пароль"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoFocus
@@ -149,71 +171,96 @@ export const Admin = () => {
     )
   }
 
-  return (
-    <div className="admin">
-      <div className="admin__header">
-        <h1>Панель управления контентом</h1>
-        <div className="admin__actions">
-          <button onClick={handleSave} className="admin__btn admin__btn--primary">
-            Сохранить
-          </button>
-          <a href="/" className="admin__btn admin__btn--secondary">
-            На сайт
-          </a>
-          <button onClick={handleLogout} className="admin__btn admin__btn--ghost">
-            Выйти
-          </button>
+  if (loading || !content) {
+    return (
+      <div className="admin-login">
+        <div className="admin-login__form">
+          <h1>⏳ Загрузка...</h1>
         </div>
       </div>
+    )
+  }
+
+  return (
+    <div className="admin">
+      {/* Шапка */}
+      <header className="admin__header">
+        <h1>⚙️ Админ-панель</h1>
+        <div className="admin__actions">
+          <button 
+            className="admin__btn admin__btn--primary"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? '⏳ Сохранение...' : '💾 Сохранить изменения'}
+          </button>
+          <button 
+            className="admin__btn admin__btn--secondary"
+            onClick={loadContent}
+          >
+            🔄 Обновить
+          </button>
+          <button 
+            className="admin__btn admin__btn--ghost"
+            onClick={handleLogout}
+          >
+            🚪 Выйти
+          </button>
+        </div>
+      </header>
 
       <div className="admin__content">
-        {/* БЛОК: Главный экран */}
-        <div className="admin__section">
-          <h2>Главный экран</h2>
+        {/* Блок Hero */}
+        <section className="admin__section">
+          <h2>👤 Главная секция</h2>
           
           <div className="admin__field">
             <label>Заголовок</label>
             <input
-              type="text"
               value={content.hero.title}
               onChange={(e) => updateHero('title', e.target.value)}
+              placeholder="Имя и возраст"
             />
           </div>
 
           <div className="admin__field">
-            <label>Подзаголовок (с анимацией)</label>
+            <label>Подзаголовок</label>
             <input
-              type="text"
               value={content.hero.subtitle}
               onChange={(e) => updateHero('subtitle', e.target.value)}
+              placeholder="Должность"
             />
           </div>
 
           <div className="admin__field">
-            <label>Слоган</label>
+            <label>Тэглайн</label>
             <input
-              type="text"
               value={content.hero.tagline}
               onChange={(e) => updateHero('tagline', e.target.value)}
+              placeholder="Специализация"
             />
           </div>
 
           <div className="admin__field">
             <label>Описание</label>
             <textarea
-              rows={4}
               value={content.hero.description}
               onChange={(e) => updateHero('description', e.target.value)}
+              rows={3}
+              placeholder="Подробное описание"
             />
           </div>
-        </div>
+        </section>
 
-        {/* БЛОК: Проекты */}
-        <div className="admin__section">
+        {/* Блок проектов */}
+        <section className="admin__section">
           <div className="admin__section-header">
-            <h2>Проекты</h2>
-            <button onClick={addProject} className="admin__btn admin__btn--secondary">
-              + Добавить
+            <h2>📂 Проекты ({content.projects.length})</h2>
+            <button 
+              className="admin__btn admin__btn--primary"
+              onClick={addProject}
+            >
+              ➕ Добавить проект
             </button>
           </div>
 
@@ -222,99 +269,103 @@ export const Admin = () => {
               <div className="admin__project-header">
                 <h3>Проект #{index + 1}</h3>
                 <button 
-                  onClick={() => deleteProject(index)}
                   className="admin__btn admin__btn--danger"
+                  onClick={() => deleteProject(index)}
                 >
-                  Удалить
+                  🗑 Удалить
                 </button>
               </div>
 
               <div className="admin__row">
                 <div className="admin__field">
-                  <label>Slug (для URL)</label>
+                  <label>Категория</label>
                   <input
-                    type="text"
-                    value={project.slug}
-                    onChange={(e) => updateProject(index, 'slug', e.target.value)}
+                    value={project.category}
+                    onChange={(e) => updateProject(index, 'category', e.target.value)}
+                    placeholder="TELEGRAM-БОТЫ"
                   />
                 </div>
 
                 <div className="admin__field">
-                  <label>Категория</label>
+                  <label>Slug (URL)</label>
                   <input
-                    type="text"
-                    value={project.category}
-                    onChange={(e) => updateProject(index, 'category', e.target.value)}
+                    value={project.slug}
+                    onChange={(e) => updateProject(index, 'slug', e.target.value)}
+                    placeholder="project-name"
                   />
+                  <small>Используется в URL: /projects/{project.slug}</small>
                 </div>
               </div>
 
               <div className="admin__field">
-                <label>Название</label>
+                <label>Название проекта</label>
                 <input
-                  type="text"
                   value={project.title}
                   onChange={(e) => updateProject(index, 'title', e.target.value)}
+                  placeholder="Название"
                 />
               </div>
 
               <div className="admin__field">
-                <label>Краткое описание (для карточки)</label>
+                <label>Краткое описание</label>
                 <textarea
-                  rows={2}
                   value={project.description}
                   onChange={(e) => updateProject(index, 'description', e.target.value)}
+                  rows={2}
+                  placeholder="Для карточки проекта"
                 />
               </div>
 
               <div className="admin__field">
-                <label>Полное описание (для страницы проекта)</label>
+                <label>Полное описание</label>
                 <textarea
-                  rows={4}
                   value={project.fullDescription}
                   onChange={(e) => updateProject(index, 'fullDescription', e.target.value)}
+                  rows={3}
+                  placeholder="Для страницы проекта"
                 />
-              </div>
-
-              <div className="admin__field">
-                <label>Технологии (через запятую)</label>
-                <input
-                  type="text"
-                  value={project.tech.join(', ')}
-                  onChange={(e) => updateProject(index, 'tech', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
-                />
-              </div>
-
-              <div className="admin__field">
-                <label>Изображения (по одному URL на строку)</label>
-                <textarea
-                  rows={4}
-                  value={project.images ? project.images.join('\n') : ''}
-                  onChange={(e) => updateProject(index, 'images', e.target.value.split('\n').map(url => url.trim()).filter(Boolean))}
-                  placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
-                />
-                <small style={{ 
-                  display: 'block', 
-                  marginTop: 'var(--space-xs)', 
-                  color: 'var(--color-text-tertiary)',
-                  fontSize: 'var(--text-xs)'
-                }}>
-                  Каждое изображение с новой строки. Если 1 изображение — на всю ширину. Если 2+ — сетка 2 колонки.
-                </small>
               </div>
 
               <div className="admin__field">
                 <label>Ссылка на проект</label>
                 <input
-                  type="text"
                   value={project.link}
                   onChange={(e) => updateProject(index, 'link', e.target.value)}
-                  placeholder="https://example.com"
+                  placeholder="https://"
                 />
+              </div>
+
+              <div className="admin__field">
+                <label>Технологии</label>
+                {project.tech.map((tech, techIndex) => (
+                  <div key={techIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      value={tech}
+                      onChange={(e) => updateTech(index, techIndex, e.target.value)}
+                      placeholder="Технология"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      className="admin__btn admin__btn--danger"
+                      onClick={() => removeTech(index, techIndex)}
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <button
+                  className="admin__btn admin__btn--secondary"
+                  onClick={() => addTech(index)}
+                  type="button"
+                  style={{ marginTop: '8px' }}
+                >
+                  ➕ Добавить технологию
+                </button>
               </div>
             </div>
           ))}
-        </div>
+        </section>
       </div>
     </div>
   )
