@@ -4,7 +4,8 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent !important;
+  tap-highlight-color: transparent !important;
 }
 
 html {
@@ -21,6 +22,7 @@ body {
   background-color: var(--color-bg);
   transition: background-color var(--transition-base),
               color var(--transition-base);
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 #root {
@@ -32,7 +34,9 @@ body {
 a {
   color: inherit;
   text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
 }
 
 button {
@@ -40,7 +44,8 @@ button {
   cursor: pointer;
   border: none;
   background: none;
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
 }
 
 button:focus-visible,
