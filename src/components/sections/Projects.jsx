@@ -11,30 +11,8 @@ const defaultProjects = [
     category: 'TELEGRAM-БОТЫ',
     title: 'CRM-бот для приёма заказов',
     description: 'Автоматизация приёма и обработки заказов через Telegram с интеграцией 1С',
-    fullDescription: 'Полноценная CRM-система на базе Telegram-бота. Автоматический приём заказов, интеграция с 1С, уведомления менеджерам, статистика продаж.',
+    fullDescription: 'Полноценная CRM-система на базе Telegram-бота.',
     tech: ['Python', 'Aiogram', 'PostgreSQL', '1C'],
-    images: [],
-    link: ''
-  },
-  {
-    id: 2,
-    slug: 'parser',
-    category: 'ПАРСИНГ',
-    title: 'Парсер маркетплейсов',
-    description: 'Автоматический сбор и анализ данных с Wildberries, Ozon, Яндекс.Маркет',
-    fullDescription: 'Система автоматического парсинга товаров, цен и остатков с популярных маркетплейсов. Выгрузка в Excel, аналитика, мониторинг конкурентов.',
-    tech: ['Python', 'Selenium', 'BeautifulSoup', 'Excel'],
-    images: [],
-    link: ''
-  },
-  {
-    id: 3,
-    slug: 'mailing-bot',
-    category: 'TELEGRAM-БОТЫ',
-    title: 'Система автоматических рассылок',
-    description: 'Telegram-бот для массовых рассылок с таргетингом и аналитикой',
-    fullDescription: 'Умная система рассылок в Telegram. Сегментация аудитории, таргетинг по интересам, A/B тестирование, детальная аналитика открытий и конверсий.',
-    tech: ['Python', 'Aiogram', 'PostgreSQL', 'Analytics'],
     images: [],
     link: ''
   }
@@ -42,20 +20,40 @@ const defaultProjects = [
 
 export const Projects = () => {
   const [projects, setProjects] = useState(defaultProjects)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const saved = localStorage.getItem('siteContent')
-    if (saved) {
+    // Загружаем данные из projects.json
+    const loadProjects = async () => {
       try {
-        const content = JSON.parse(saved)
-        if (content.projects && content.projects.length > 0) {
-          setProjects(content.projects)
+        const res = await fetch('/data/projects.json')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.projects && data.projects.length > 0) {
+            setProjects(data.projects)
+          }
         }
-      } catch (e) {
-        console.error('Error loading projects:', e)
+      } catch (error) {
+        console.error('Ошибка загрузки проектов:', error)
+      } finally {
+        setLoading(false)
       }
     }
+
+    loadProjects()
   }, [])
+
+  if (loading) {
+    return (
+      <section id="projects" className="projects">
+        <div className="projects__container">
+          <div className="projects__header">
+            <h2 className="projects__title">Загрузка...</h2>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section id="projects" className="projects">
