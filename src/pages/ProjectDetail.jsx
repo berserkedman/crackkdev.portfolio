@@ -4,75 +4,55 @@ import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import './ProjectDetail.css'
 
-const defaultProjects = [
-  {
-    id: 1,
-    slug: 'crm-bot',
-    category: 'TELEGRAM-БОТЫ',
-    title: 'CRM-бот для приёма заказов',
-    description: 'Автоматизация приёма и обработки заказов через Telegram с интеграцией 1С',
-    fullDescription: 'Полноценная CRM-система на базе Telegram-бота. Автоматический приём заказов, интеграция с 1С, уведомления менеджерам, статистика продаж.',
-    tech: ['Python', 'Aiogram', 'PostgreSQL', '1C'],
-    image: '',
-    link: ''
-  },
-  {
-    id: 2,
-    slug: 'parser',
-    category: 'ПАРСИНГ',
-    title: 'Парсер маркетплейсов',
-    description: 'Автоматический сбор и анализ данных с Wildberries, Ozon, Яндекс.Маркет',
-    fullDescription: 'Система автоматического парсинга товаров, цен и остатков с популярных маркетплейсов. Выгрузка в Excel, аналитика, мониторинг конкурентов.',
-    tech: ['Python', 'Selenium', 'BeautifulSoup', 'Excel'],
-    image: '',
-    link: ''
-  },
-  {
-    id: 3,
-    slug: 'mailing-bot',
-    category: 'TELEGRAM-БОТЫ',
-    title: 'Система автоматических рассылок',
-    description: 'Telegram-бот для массовых рассылок с таргетингом и аналитикой',
-    fullDescription: 'Умная система рассылок в Telegram. Сегментация аудитории, таргетинг по интересам, A/B тестирование, детальная аналитика открытий и конверсий.',
-    tech: ['Python', 'Aiogram', 'PostgreSQL', 'Analytics'],
-    image: '',
-    link: ''
-  }
-]
-
 export const ProjectDetail = () => {
   const { slug } = useParams()
   const [project, setProject] = useState(null)
   const [notFound, setNotFound] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Получаем все проекты
-    let allProjects = defaultProjects
-    
-    const saved = localStorage.getItem('siteContent')
-    if (saved) {
+    const loadProject = async () => {
       try {
-        const content = JSON.parse(saved)
-        if (content.projects && content.projects.length > 0) {
-          allProjects = content.projects
+        const res = await fetch('/data/projects.json')
+        if (res.ok) {
+          const data = await res.json()
+          const found = data.projects.find(p => p.slug === slug)
+          
+          if (found) {
+            setProject(found)
+            setNotFound(false)
+          } else {
+            setNotFound(true)
+          }
+        } else {
+          setNotFound(true)
         }
-      } catch (e) {
-        console.error('Error loading project:', e)
+      } catch (error) {
+        console.error('Ошибка загрузки проекта:', error)
+        setNotFound(true)
+      } finally {
+        setLoading(false)
       }
     }
 
-    // Ищем проект по slug
-    const found = allProjects.find(p => p.slug === slug)
-    
-    if (found) {
-      setProject(found)
-      setNotFound(false)
-    } else {
-      setNotFound(true)
-    }
+    loadProject()
   }, [slug])
 
-  // Если проект не найден - показываем сообщение
+  // Пока проект загружается
+  if (loading) {
+    return (
+      <div className="project-detail">
+        <div className="project-detail__container">
+          <Link to="/" className="project-detail__back">
+            ← Назад на главную
+          </Link>
+          <p style={{ color: 'var(--color-text-secondary)' }}>Загрузка...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Если проект не найден
   if (notFound) {
     return (
       <div className="project-detail">
@@ -84,17 +64,6 @@ export const ProjectDetail = () => {
             <h1>Проект не найден</h1>
             <p>Возможно, он был удалён или изменён</p>
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Пока проект загружается
-  if (!project) {
-    return (
-      <div className="project-detail">
-        <div className="project-detail__container">
-          <p style={{ color: 'var(--color-text-secondary)' }}>Загрузка...</p>
         </div>
       </div>
     )
@@ -115,19 +84,18 @@ export const ProjectDetail = () => {
         </div>
 
         {project.images && project.images.length > 0 && (
-  <div className="project-detail__images">
-    {project.images.map((image, index) => (
-      <div key={index} className="project-detail__image">
-        <img src={image} alt={`${project.title} - изображение ${index + 1}`} />
-      </div>
-    ))}
-  </div>
-)}
-
+          <div className="project-detail__images">
+            {project.images.map((image, index) => (
+              <div key={index} className="project-detail__image">
+                <img src={image} alt={`${project.title} - изображение ${index + 1}`} />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="project-detail__content">
           <h2>О проекте</h2>
-          <p>{project.fullDescription}</p>
+          <p style={{ whiteSpace: 'pre-line' }}>{project.fullDescription}</p>
         </div>
 
         <div className="project-detail__tech">
